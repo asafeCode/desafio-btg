@@ -199,11 +199,6 @@ FakesAssemblies/
 
 .vscode/settings.json
 
-# Ignore appsettings with secrets
-appsettings.json
-appsettings.Development.json
-appsettings.Production.json
-
 # Ignore K6 Tests
 /load-tests*/
 
