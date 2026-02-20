@@ -1,22 +1,30 @@
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using DesafioBtg.Domain.Abstractions.Persistence;
+using DesafioBtg.Domain.DTOs.Responses;
 using DesafioBtg.Domain.Entities;
+using DesafioBtg.Domain.Enums;
 using DesafioBtg.Infrastructure.DataModels;
 using DesafioBtg.Infrastructure.Interfaces;
 
 namespace DesafioBtg.Infrastructure.Repositories;
 
-public class UserRepository(IDynamoDbSet<UserModel> dbSet, IAmazonDynamoDB dynamoDbClient)
-    : BaseRepository<User, UserModel>(dbSet), IUserRepository
+public class UserRepository : BaseRepository<User, UserModel>, IUserRepository
 {
     private const string TableName = "users";
+    private readonly IAmazonDynamoDB _dynamoDbClient;
+
+    public UserRepository(IDynamoDbSet<UserModel> dbSet, IAmazonDynamoDB dynamoDbClient)
+        : base(dbSet)
+    {
+        _dynamoDbClient = dynamoDbClient;
+    }
 
     public Task<User?> GetByAccountAsync(string agencyNumber, string accountNumber, CancellationToken cancellationToken = default)
     {
         var partitionKey = BuildPartitionKey(agencyNumber);
         var sortKey = BuildSortKey(accountNumber);
-        
+
         return GetByKeyAsync(partitionKey, sortKey, cancellationToken);
     }
 
@@ -48,7 +56,7 @@ public class UserRepository(IDynamoDbSet<UserModel> dbSet, IAmazonDynamoDB dynam
 
         try
         {
-            var response = await dynamoDbClient.UpdateItemAsync(request, cancellationToken);
+            var response = await _dynamoDbClient.UpdateItemAsync(request, cancellationToken);
             var remainingLimit = decimal.Parse(
                 response.Attributes["pix_limit"].N,
                 System.Globalization.CultureInfo.InvariantCulture);
@@ -66,7 +74,7 @@ public class UserRepository(IDynamoDbSet<UserModel> dbSet, IAmazonDynamoDB dynam
             return new PixConsumeResult(PixConsumeStatus.InsufficientLimit, account.PixLimit);
         }
     }
-    
+
     protected override User ToEntity(UserModel model)
     {
         return new User

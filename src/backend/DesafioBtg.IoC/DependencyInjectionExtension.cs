@@ -52,7 +52,6 @@ public static class DependencyInjectionExtension
                 .Build());
 
         services.AddScoped(typeof(IDynamoDbSet<>), typeof(DynamoDbSet<>));
-        services.AddScoped<IRepositoryDbSet, RepositoryDbSet>();
         services.AddScoped<IUserRepository, UserRepository>();
     }
 

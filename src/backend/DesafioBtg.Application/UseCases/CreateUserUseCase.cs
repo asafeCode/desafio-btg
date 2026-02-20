@@ -1,6 +1,6 @@
 using System.Net;
 using DesafioBtg.Application.Abstractions;
-using DesafioBtg.Application.UseCases.Shared;
+using DesafioBtg.Application.Mappers;
 using DesafioBtg.Domain.Abstractions.Persistence;
 using DesafioBtg.Domain.DTOs.Exceptions;
 using DesafioBtg.Domain.DTOs.Requests;
@@ -10,18 +10,27 @@ using FluentValidation;
 
 namespace DesafioBtg.Application.UseCases;
 
-public class CreateUserUseCase(
-    IUserRepository userRepository,
-    IValidator<CreateUserRequest> validator) : ICreateUserUseCase
+public class CreateUserUseCase : ICreateUserUseCase
 {
+    private readonly IUserRepository _userRepository;
+    private readonly IValidator<CreateUserRequest> _validator;
+
+    public CreateUserUseCase(
+        IUserRepository userRepository,
+        IValidator<CreateUserRequest> validator)
+    {
+        _userRepository = userRepository;
+        _validator = validator;
+    }
+
     public async Task<UserResponse> ExecuteAsync(CreateUserRequest input, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(input, cancellationToken);
+        await _validator.ValidateAndThrowAsync(input, cancellationToken);
 
-        var agencyNumber = UserUseCaseMapper.Normalize(input.AgencyNumber);
-        var accountNumber = UserUseCaseMapper.Normalize(input.AccountNumber);
+        var agencyNumber = input.AgencyNumber;
+        var accountNumber = input.AccountNumber;
 
-        var existing = await userRepository.GetByAccountAsync(agencyNumber, accountNumber, cancellationToken);
+        var existing = await _userRepository.GetByAccountAsync(agencyNumber, accountNumber, cancellationToken);
         if (existing is not null)
         {
             throw new BusinessException("Account already registered.", HttpStatusCode.Conflict);
@@ -29,13 +38,13 @@ public class CreateUserUseCase(
 
         var user = new User
         {
-            NationalId = UserUseCaseMapper.Normalize(input.NationalId),
+            NationalId = input.NationalId,
             AgencyNumber = agencyNumber,
             AccountNumber = accountNumber,
             PixLimit = input.PixLimit
         };
 
-        await userRepository.AddAsync(user, cancellationToken);
-        return UserUseCaseMapper.ToResponse(user);
+        await _userRepository.AddAsync(user, cancellationToken);
+        return user.ToResponse();
     }
 }

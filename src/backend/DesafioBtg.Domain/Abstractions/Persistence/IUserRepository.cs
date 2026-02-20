@@ -1,3 +1,4 @@
+using DesafioBtg.Domain.DTOs.Responses;
 using DesafioBtg.Domain.Entities;
 
 namespace DesafioBtg.Domain.Abstractions.Persistence;
